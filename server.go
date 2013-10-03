@@ -11,26 +11,25 @@ type Server struct {
 	Host                   string
 	Port                   int
 	Master                 string
-	Backends               []*Backend
+	Backends               map[string]*Backend
 	Listener               net.Listener
 	OnSelecBackendtHandler func(req *http.Request) []string
 }
 
-func (server *Server) SetHost(host string) {
-	server.Host = host
+func NewServer() *Server {
+    server := &Server{}
+    server.Port = 8484
+    server.Backends = make(map[string]*Backend)
+    return server
 }
 
-func (server *Server) SetPort(port int) {
-	server.Port = port
-}
-
-func (server *Server) AddMasterBackend(name, host string, port int) {
+func (server *Server) AddMasterBackend(name, scheme, host string, port int) {
 	server.Master = name
-	server.Backends = append(server.Backends, &Backend{name, host, string(port)})
+	server.Backends[name] = &Backend{name, scheme, host, port}
 }
 
-func (server *Server) AddBackend(name, host string, port int) {
-	server.Backends = append(server.Backends, &Backend{name, host, string(port)})
+func (server *Server) AddBackend(name, scheme, host string, port int) {
+	server.Backends[name] = &Backend{name, scheme, host, port}
 }
 
 func (server *Server) OnSelectBackend(handler func(req *http.Request) []string) {

@@ -1,0 +1,4 @@
+proxy: ../build/proxy
+production: rackup -I. config.ru -p 8080
+testing: rackup -I. config.ru -p 8081
+
