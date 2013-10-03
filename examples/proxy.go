@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/kentaro/delta"
+	"net/http"
 )
 
 func main() {
@@ -10,8 +11,8 @@ func main() {
 	server.SetPort(8484)
 	server.AddMasterBackend("production", "production.example.com", 8080)
 	server.AddBackend("testing", "testing.example.com", 8080)
-	server.OnSelectBackend(func(req *delta.Request) []string {
-		if req.Method() == "GET" {
+	server.OnSelectBackend(func(req *http.Request) []string {
+		if req.Method == "GET" {
 			return []string{"production", "testing"}
 		} else {
 			return []string{"production"}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 )
 
 type Server struct {
@@ -12,7 +13,7 @@ type Server struct {
 	Master                 string
 	Backends               []*Backend
 	Listener               net.Listener
-	OnSelecBackendtHandler func(req *Request) []string
+	OnSelecBackendtHandler func(req *http.Request) []string
 }
 
 func (server *Server) SetHost(host string) {
@@ -32,13 +33,8 @@ func (server *Server) AddBackend(name, host string, port int) {
 	server.Backends = append(server.Backends, &Backend{name, host, string(port)})
 }
 
-func (server *Server) OnSelectBackend(handler func(req *Request) []string) {
+func (server *Server) OnSelectBackend(handler func(req *http.Request) []string) {
 	server.OnSelecBackendtHandler = handler
-}
-
-func (server *Server) HandleConnection(conn net.Conn) {
-	connection := &Connection{conn}
-	connection.Handle(server)
 }
 
 func (server *Server) Run() {
@@ -48,14 +44,6 @@ func (server *Server) Run() {
 		log.Fatal(err)
 	}
 
-	for {
-		conn, err := listener.Accept()
-
-		if err != nil {
-			log.Print("failed to accept")
-			continue
-		}
-
-		go server.HandleConnection(conn)
-	}
+	http.Handle("/", &Handler{server})
+	log.Fatal(http.Serve(listener, nil))
 }
