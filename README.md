@@ -60,3 +60,7 @@ func main() {
 
   * [Kentaro Kuribayashi](http://kentarok.org/)
 
+## LICENSE
+
+  * MIT http://kentaro.mit-license.org/
+
