@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"time"
 )
 
 type Handler struct {
@@ -56,13 +57,16 @@ func (handler *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request)
 func (handler *Handler) dispatchProxyRequest(backend *Backend, req *http.Request, ch chan *Response) {
 	proxyRequest := handler.copyRequest(backend, req)
 	client := new(http.Client)
+
+	now := time.Now()
 	res, err := client.Do(proxyRequest)
+	elapsed := time.Now().Sub(now)
 
 	if err != nil {
 		log.Println(err)
 	}
 
-	ch <- &Response{backend, res, make([]byte, 0)}
+	ch <- &Response{backend, res, make([]byte, 0), elapsed}
 }
 
 func (handler *Handler) copyRequest(backend *Backend, req *http.Request) *http.Request {

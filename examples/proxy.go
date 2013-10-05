@@ -4,6 +4,7 @@ import (
 	"github.com/kentaro/delta"
 	"log"
 	"net/http"
+	"time"
 )
 
 func main() {
@@ -30,7 +31,7 @@ func main() {
 
 	server.OnBackendFinished(func(responses map[string]*delta.Response) {
 		for backend, response := range responses {
-			log.Printf("%s: %s", backend, response.Data)
+			log.Printf("%s [%d ms]: %s", backend, (response.Elapsed / time.Millisecond), response.Data)
 		}
 	})
 
