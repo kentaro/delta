@@ -16,7 +16,7 @@ func (handler *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request)
 	ch := make(chan *Response, backendCount)
 
 	for i := range backendNames {
-		go dispatchProxyRequest(handler.server.Backends[backendNames[i]], req, ch)
+		go handler.dispatchProxyRequest(handler.server.Backends[backendNames[i]], req, ch)
 	}
 
 	requestCount := 0
@@ -42,8 +42,8 @@ func (handler *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request)
 	}
 }
 
-func dispatchProxyRequest(backend *Backend, req *http.Request, ch chan *Response) {
-	proxyRequest := copyRequest(backend, req)
+func (handler *Handler) dispatchProxyRequest(backend *Backend, req *http.Request, ch chan *Response) {
+	proxyRequest := handler.copyRequest(backend, req)
 	client := new(http.Client)
 	res, err := client.Do(proxyRequest)
 
@@ -54,7 +54,7 @@ func dispatchProxyRequest(backend *Backend, req *http.Request, ch chan *Response
 	ch <- &Response{backend, res}
 }
 
-func copyRequest(backend *Backend, req *http.Request) *http.Request {
+func (handler *Handler) copyRequest(backend *Backend, req *http.Request) *http.Request {
 	proxyRequest, err := http.NewRequest(req.Method, backend.URL(req.URL.String()), nil)
 
 	if err != nil {
@@ -63,6 +63,7 @@ func copyRequest(backend *Backend, req *http.Request) *http.Request {
 
 	proxyRequest.Proto = req.Proto
 	proxyRequest.Host = backend.HostPort()
+	proxyRequest.Body = req.Body
 
 	// Copy deeply because we may modify header later
 	for key, values := range req.Header {
@@ -71,7 +72,7 @@ func copyRequest(backend *Backend, req *http.Request) *http.Request {
 		}
 	}
 
-	proxyRequest.Body = req.Body
+	handler.server.OnMungeHeaderHandler(backend, &proxyRequest.Header)
 
 	return proxyRequest
 }
