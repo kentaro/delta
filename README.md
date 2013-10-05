@@ -48,7 +48,15 @@ func main() {
 }
 ```
 
+## SEE ALSO
+
+  * [Kage](https://github.com/cookpad/kage)
+  * [Geets](https://github.com/lestrrat/p5-Geest)
+    * Perl port of Kage
+  * [Gor](https://github.com/buger/gor)
+    * It's a tool written in Go to deal with a similar problem
+
 ## Author
 
-  * Kentaro Kuribayashi <kentarok@gmail.com>
+  * [Kentaro Kuribayashi](http://kentarok.org/)
 
