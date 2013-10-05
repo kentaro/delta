@@ -48,7 +48,7 @@ func main() {
 }
 ```
 
-## SEE ALSO
+## See Also
 
   * [Kage](https://github.com/cookpad/kage)
   * [Geets](https://github.com/lestrrat/p5-Geest)
@@ -60,7 +60,7 @@ func main() {
 
   * [Kentaro Kuribayashi](http://kentarok.org/)
 
-## LICENSE
+## License
 
   * MIT http://kentaro.mit-license.org/
 
