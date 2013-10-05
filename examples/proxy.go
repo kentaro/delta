@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/kentaro/delta"
+	"log"
 	"net/http"
 )
 
@@ -9,8 +10,10 @@ func main() {
 	server := delta.NewServer()
 	server.Host = "127.0.0.1"
 	server.Port = 8484
+
 	server.AddMasterBackend("production", "127.0.0.1", 8080)
 	server.AddBackend("testing", "127.0.0.1", 8081)
+
 	server.OnSelectBackend(func(req *http.Request) []string {
 		if req.Method == "GET" {
 			return []string{"production", "testing"}
@@ -18,5 +21,18 @@ func main() {
 			return []string{"production"}
 		}
 	})
+
+	server.OnMungeHeader(func(backend string, header *http.Header) {
+		if backend == "testing" {
+			header.Add("X-Delta-Sandbox", "1")
+		}
+	})
+
+	server.OnBackendFinished(func(responses map[string]*delta.Response) {
+		for backend, response := range responses {
+			log.Printf("%s: %s", backend, response.Data)
+		}
+	})
+
 	server.Run()
 }

@@ -5,6 +5,7 @@ import (
 )
 
 type Response struct {
-	backend *Backend
-	res     *http.Response
+	backend      *Backend
+	httpResponse *http.Response
+	Data         []byte
 }

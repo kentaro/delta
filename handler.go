@@ -16,29 +16,40 @@ func (handler *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request)
 	ch := make(chan *Response, backendCount)
 
 	for i := range backendNames {
-		go handler.dispatchProxyRequest(handler.server.Backends[backendNames[i]], req, ch)
+		backend := handler.server.Backends[backendNames[i]]
+		go handler.dispatchProxyRequest(backend, req, ch)
 	}
 
+	responses := make(map[string]*Response)
 	requestCount := 0
 
 	for {
 		response := <-ch
+		defer response.httpResponse.Body.Close()
+
 		requestCount = requestCount + 1
+		responses[response.backend.name] = response
 
-		if response.backend.name == handler.server.Master {
-			content, err := ioutil.ReadAll(response.res.Body)
-			defer response.res.Body.Close()
-
-			if err != nil {
-				log.Printf("%s", err)
-			}
-
-			writer.Write(content)
-		}
-
-		if requestCount == len(backendNames) {
+		data, err := ioutil.ReadAll(response.httpResponse.Body)
+		if err != nil {
+			log.Printf("backend: %s, message: %s", response.backend.name, err)
 			break
 		}
+
+		response.Data = data
+
+		if response.backend.name == handler.server.Master {
+			writer.WriteHeader(response.httpResponse.StatusCode)
+			writer.Write(data)
+		}
+
+		if requestCount >= len(backendNames) {
+			break
+		}
+	}
+
+	if handler.server.OnBackendFinishedHandler != nil {
+		handler.server.OnBackendFinishedHandler(responses)
 	}
 }
 
@@ -51,7 +62,7 @@ func (handler *Handler) dispatchProxyRequest(backend *Backend, req *http.Request
 		log.Println(err)
 	}
 
-	ch <- &Response{backend, res}
+	ch <- &Response{backend, res, make([]byte, 0)}
 }
 
 func (handler *Handler) copyRequest(backend *Backend, req *http.Request) *http.Request {
@@ -72,7 +83,9 @@ func (handler *Handler) copyRequest(backend *Backend, req *http.Request) *http.R
 		}
 	}
 
-	handler.server.OnMungeHeaderHandler(backend, &proxyRequest.Header)
+	if handler.server.OnMungeHeaderHandler != nil {
+		handler.server.OnMungeHeaderHandler(backend.name, &proxyRequest.Header)
+	}
 
 	return proxyRequest
 }
