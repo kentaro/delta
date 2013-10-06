@@ -1,7 +1,6 @@
 package delta
 
 import (
-	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
@@ -14,47 +13,43 @@ type Handler struct {
 func (handler *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	backendNames := handler.server.OnSelecBackendtHandler(req)
 	backendCount := len(backendNames)
-	ch := make(chan *Response, backendCount)
+
+	masterResponseCh := make(chan *Response, 1)
+	responseCh := make(chan *Response, backendCount)
 
 	for i := range backendNames {
 		backend := handler.server.Backends[backendNames[i]]
-		go handler.dispatchProxyRequest(backend, req, ch)
+		go handler.dispatchProxyRequest(backend, req, masterResponseCh, responseCh)
 	}
 
 	responses := make(map[string]*Response)
 	requestCount := 0
 
-	for {
-		response := <-ch
-		defer response.httpResponse.Body.Close()
+	// Wait for all responses asynchronously
+	go func() {
+		for {
+			response := <-responseCh
 
-		requestCount = requestCount + 1
-		responses[response.backend.name] = response
+			requestCount = requestCount + 1
+			responses[response.backend.name] = response
 
-		data, err := ioutil.ReadAll(response.httpResponse.Body)
-		if err != nil {
-			log.Printf("backend: %s, message: %s", response.backend.name, err)
-			break
+			if requestCount >= len(backendNames) {
+				if handler.server.OnBackendFinishedHandler != nil {
+					handler.server.OnBackendFinishedHandler(responses)
+				}
+
+				break
+			}
 		}
+	}()
 
-		response.Data = data
-
-		if response.backend.name == handler.server.Master {
-			writer.WriteHeader(response.httpResponse.StatusCode)
-			writer.Write(data)
-		}
-
-		if requestCount >= len(backendNames) {
-			break
-		}
-	}
-
-	if handler.server.OnBackendFinishedHandler != nil {
-		handler.server.OnBackendFinishedHandler(responses)
-	}
+	// Wait for only master response in a blocking way
+	response := <-masterResponseCh
+	writer.WriteHeader(response.httpResponse.StatusCode)
+	writer.Write(response.Data)
 }
 
-func (handler *Handler) dispatchProxyRequest(backend *Backend, req *http.Request, ch chan *Response) {
+func (handler *Handler) dispatchProxyRequest(backend *Backend, req *http.Request, masterResponseCh chan *Response, responseCh chan *Response) {
 	proxyRequest := handler.copyRequest(backend, req)
 	client := new(http.Client)
 
@@ -66,7 +61,16 @@ func (handler *Handler) dispatchProxyRequest(backend *Backend, req *http.Request
 		log.Println(err)
 	}
 
-	ch <- &Response{backend, res, make([]byte, 0), elapsed}
+	response, err := NewResponse(backend, res, elapsed)
+
+	if err != nil {
+		log.Println(err)
+	}
+
+	responseCh <- response
+	if backend.name == handler.server.Master {
+		masterResponseCh <- response
+	}
 }
 
 func (handler *Handler) copyRequest(backend *Backend, req *http.Request) *http.Request {
