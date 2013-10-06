@@ -1,4 +1,4 @@
-proxy: ../build/proxy
+proxy: go run ../examples/proxy.go
 production: rackup -I. config.ru -p 8080
 testing: rackup -I. config.ru -p 8081
 
