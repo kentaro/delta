@@ -10,6 +10,12 @@ type Handler struct {
 	server *Server
 }
 
+func NewHandler(server *Server) *Handler {
+	return &Handler{
+		server: server,
+	}
+}
+
 func (handler *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	backendNames := handler.server.onSelecBackendtHandler(req)
 	backendCount := len(backendNames)

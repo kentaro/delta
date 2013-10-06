@@ -75,6 +75,6 @@ func (server *Server) Run() {
 		log.Fatal(err)
 	}
 
-	http.Handle("/", &Handler{server: server})
+	http.Handle("/", NewHandler(server))
 	log.Fatal(http.Serve(listener, nil))
 }
