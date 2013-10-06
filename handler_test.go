@@ -67,7 +67,7 @@ func TestHandler(t *testing.T) {
 
 	Describe(t, "ServeHTTP", func() {
 		Context("when request to normal path", func() {
-			response := get(handler, "/")
+			get(handler, "/")
 
 			It("should dispatch a request to production", func() {
 				Expect(productionResponse.Body.String()).To(Equal, "production")
