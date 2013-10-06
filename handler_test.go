@@ -35,15 +35,18 @@ func setupServer() *Server {
 	return server
 }
 
-func launchBackend(backend string, addr string) {
+func launchBackend(backend string, addr string) *httptest.ResponseRecorder {
 	router := router.NewRouter()
+	recorder := httptest.NewRecorder()
 
 	router.Get("/", http.HandlerFunc(func(writer http.ResponseWriter, req *http.Request) {
-		fmt.Fprintf(writer, "%s", backend)
+		fmt.Fprintf(recorder, "%s", backend)
 	}))
 
 	server := &http.Server{Addr: addr, Handler: router}
-	server.ListenAndServe()
+	go server.ListenAndServe()
+
+	return recorder
 }
 
 func get(handler http.Handler, path string) *httptest.ResponseRecorder {
@@ -58,16 +61,20 @@ func request(handler http.Handler, method, path string) *httptest.ResponseRecord
 }
 
 func TestHandler(t *testing.T) {
-	go launchBackend("production", ":8080")
-	go launchBackend("testing", ":8081")
+	productionResponse := launchBackend("production", ":8080")
+	testingResponse := launchBackend("testing", ":8081")
 	handler := NewHandler(setupServer())
 
 	Describe(t, "ServeHTTP", func() {
-		Context("request to normal path", func() {
+		Context("when request to normal path", func() {
 			response := get(handler, "/")
 
-			It("should record only master's response", func() {
-				Expect(response.Body.String()).To(Equal, "production")
+			It("should dispatch a request to production", func() {
+				Expect(productionResponse.Body.String()).To(Equal, "production")
+			})
+
+			It("should dispatch a request to testing", func() {
+				Expect(testingResponse.Body.String()).To(Equal, "testing")
 			})
 		})
 	})
