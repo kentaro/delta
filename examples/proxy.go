@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/kentaro/delta"
+	"../"
 	"log"
 	"net/http"
 	"time"
