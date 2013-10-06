@@ -8,9 +8,7 @@ import (
 )
 
 func main() {
-	server := delta.NewServer()
-	server.Host = "127.0.0.1"
-	server.Port = 8484
+	server := delta.NewServer("0.0.0.0", 8484)
 
 	server.AddMasterBackend("production", "127.0.0.1", 8080)
 	server.AddBackend("testing", "127.0.0.1", 8081)

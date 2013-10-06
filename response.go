@@ -7,17 +7,22 @@ import (
 )
 
 type Response struct {
-	backend      *Backend
-	httpResponse *http.Response
+	Backend      *Backend
+	HttpResponse *http.Response
 	Data         []byte
 	Elapsed      time.Duration
 }
 
 func NewResponse(backend *Backend, httpResponse *http.Response, elapsed time.Duration) (*Response, error) {
-	response := &Response{backend, httpResponse, make([]byte, 0), elapsed}
+	response := &Response{
+		Backend:      backend,
+		HttpResponse: httpResponse,
+		Data:         make([]byte, 0),
+		Elapsed:      elapsed,
+	}
 	data, err := ioutil.ReadAll(httpResponse.Body)
 
-	response.httpResponse.Body.Close()
+	response.HttpResponse.Body.Close()
 	response.Data = data
 
 	return response, err

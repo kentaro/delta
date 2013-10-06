@@ -11,7 +11,7 @@ type Handler struct {
 }
 
 func (handler *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	backendNames := handler.server.OnSelecBackendtHandler(req)
+	backendNames := handler.server.onSelecBackendtHandler(req)
 	backendCount := len(backendNames)
 
 	masterResponseCh := make(chan *Response, 1)
@@ -31,11 +31,11 @@ func (handler *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request)
 			response := <-responseCh
 
 			requestCount = requestCount + 1
-			responses[response.backend.name] = response
+			responses[response.Backend.Name] = response
 
 			if requestCount >= len(backendNames) {
-				if handler.server.OnBackendFinishedHandler != nil {
-					handler.server.OnBackendFinishedHandler(responses)
+				if handler.server.onBackendFinishedHandler != nil {
+					handler.server.onBackendFinishedHandler(responses)
 				}
 
 				break
@@ -45,7 +45,7 @@ func (handler *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request)
 
 	// Wait for only master response in a blocking way
 	response := <-masterResponseCh
-	writer.WriteHeader(response.httpResponse.StatusCode)
+	writer.WriteHeader(response.HttpResponse.StatusCode)
 	writer.Write(response.Data)
 }
 
@@ -68,7 +68,7 @@ func (handler *Handler) dispatchProxyRequest(backend *Backend, req *http.Request
 	}
 
 	responseCh <- response
-	if backend.name == handler.server.Master {
+	if backend.IsMaster {
 		masterResponseCh <- response
 	}
 }
@@ -91,8 +91,8 @@ func (handler *Handler) copyRequest(backend *Backend, req *http.Request) *http.R
 		}
 	}
 
-	if handler.server.OnMungeHeaderHandler != nil {
-		handler.server.OnMungeHeaderHandler(backend.name, &proxyRequest.Header)
+	if handler.server.onMungeHeaderHandler != nil {
+		handler.server.onMungeHeaderHandler(backend.Name, &proxyRequest.Header)
 	}
 
 	return proxyRequest
