@@ -28,11 +28,11 @@ func (handler *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request)
 		go handler.dispatchProxyRequest(backend, req, masterResponseCh, responseCh)
 	}
 
-	responses := make(map[string]*Response)
-	requestCount := 0
-
 	// Wait for all responses asynchronously
 	go func() {
+		responses := make(map[string]*Response)
+		requestCount := 0
+
 		for {
 			response := <-responseCh
 
