@@ -1,3 +1,5 @@
+// Package delta is an HTTP shadow proxy server that sits between
+// clients and your server(s) to enable "shadow requests".
 package delta
 
 import (
