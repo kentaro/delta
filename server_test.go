@@ -19,7 +19,7 @@ func TestServer(t *testing.T) {
 		})
 
 		It("should set a handler to select backend by default", func() {
-			Expect(server.onSelecBackendtHandler).To(Exist)
+			Expect(server.onSelectBackendHandler).To(Exist)
 		})
 	})
 
@@ -50,11 +50,11 @@ func TestServer(t *testing.T) {
 	Describe(t, "OnSelectBackend", func() {
 		server := NewServer("0.0.0.0", 8484)
 
-		It("should set a handler into its onSelecBackendtHandler field", func() {
+		It("should set a handler into its onSelectBackendHandler field", func() {
 			server.OnSelectBackend(func(req *http.Request) []string {
 				return []string{"testing"}
 			})
-			Expect(server.onSelecBackendtHandler).To(NotEqual, nil)
+			Expect(server.onSelectBackendHandler).To(NotEqual, nil)
 		})
 	})
 

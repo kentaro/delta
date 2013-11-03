@@ -17,7 +17,7 @@ func NewHandler(server *Server) *Handler {
 }
 
 func (handler *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	backendNames := handler.server.onSelecBackendtHandler(req)
+	backendNames := handler.server.onSelectBackendHandler(req)
 	backendCount := len(backendNames)
 
 	masterResponseCh := make(chan *Response, 1)
@@ -39,7 +39,7 @@ func (handler *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request)
 			requestCount = requestCount + 1
 			responses[response.Backend.Name] = response
 
-			if requestCount >= len(backendNames) {
+			if requestCount >= backendCount {
 				if handler.server.onBackendFinishedHandler != nil {
 					handler.server.onBackendFinishedHandler(responses)
 				}
