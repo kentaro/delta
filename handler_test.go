@@ -12,8 +12,8 @@ import (
 func setupServer() *Server {
 	server := NewServer("0.0.0.0", 8484)
 
-	server.AddMasterBackend("production", "0.0.0.0", 8080)
-	server.AddBackend("testing", "0.0.0.0", 8081)
+	server.AddMasterBackend("production", "0.0.0.0", 18080)
+	server.AddBackend("testing", "0.0.0.0", 18081)
 
 	server.OnSelectBackend(func(req *http.Request) []string {
 		if req.Method == "GET" {
@@ -28,10 +28,6 @@ func setupServer() *Server {
 			header.Add("X-Delta-Sandbox", "1")
 		}
 	})
-
-	server.OnBackendFinished(func(responses map[string]*Response) {
-	})
-
 	return server
 }
 
@@ -61,14 +57,20 @@ func request(handler http.Handler, method, path string) *httptest.ResponseRecord
 }
 
 func TestHandler(t *testing.T) {
-	productionResponse := launchBackend("production", ":8080")
-	testingResponse := launchBackend("testing", ":8081")
-	handler := NewHandler(setupServer())
+	productionResponse := launchBackend("production", ":18080")
+	testingResponse := launchBackend("testing", ":18081")
+	server := setupServer()
+	handler := NewHandler(server)
 
 	Describe(t, "ServeHTTP", func() {
 		Context("when request to normal path", func() {
-			get(handler, "/")
+			shouldquit := make(chan int)
+			server.OnBackendFinished(func(responses map[string]*Response) {
+				shouldquit <- 1
+			})
 
+			get(handler, "/")
+			<-shouldquit
 			It("should dispatch a request to production", func() {
 				Expect(productionResponse.Body.String()).To(Equal, "production")
 			})
@@ -76,6 +78,7 @@ func TestHandler(t *testing.T) {
 			It("should dispatch a request to testing", func() {
 				Expect(testingResponse.Body.String()).To(Equal, "testing")
 			})
+
 		})
 	})
 }
