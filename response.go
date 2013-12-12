@@ -21,12 +21,10 @@ func NewResponse(backend *Backend, httpResponse *http.Response, elapsed time.Dur
 		Elapsed:      elapsed,
 	}
 
-	if httpResponse != nil {
-		var data []byte
-		data, err = ioutil.ReadAll(httpResponse.Body)
-		response.HttpResponse.Body.Close()
-		response.Data = data
-	}
+	var data []byte
+	data, err = ioutil.ReadAll(httpResponse.Body)
+	response.HttpResponse.Body.Close()
+	response.Data = data
 
 	return response, err
 }
