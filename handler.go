@@ -22,6 +22,7 @@ func (handler *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request)
 
 	masterResponseCh := make(chan *Response, 1)
 	responseCh := make(chan *Response, backendCount)
+	done := make(chan bool)
 
 	for i := range backendNames {
 		backend := handler.server.Backends[backendNames[i]]
@@ -44,6 +45,7 @@ func (handler *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request)
 					handler.server.onBackendFinishedHandler(responses)
 				}
 
+				done <- true
 				break
 			}
 		}
@@ -53,6 +55,8 @@ func (handler *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request)
 	response := <-masterResponseCh
 	writer.WriteHeader(response.HttpResponse.StatusCode)
 	writer.Write(response.Data)
+
+	<-done
 }
 
 func (handler *Handler) dispatchProxyRequest(backend *Backend, req *http.Request, masterResponseCh chan *Response, responseCh chan *Response) {
