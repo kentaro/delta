@@ -1,0 +1,12 @@
+language: go
+go:
+  - 1.1.2
+  - 1.2
+  - tip
+install:
+  # XXX: go1.1.2 doesn't support go get -t
+  - go get
+  - go get github.com/r7kamura/gospel
+  - go get github.com/r7kamura/router
+script:
+  - go test -v
