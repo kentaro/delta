@@ -64,13 +64,8 @@ func TestHandler(t *testing.T) {
 
 	Describe(t, "ServeHTTP", func() {
 		Context("when request to normal path", func() {
-			shouldquit := make(chan int)
-			server.OnBackendFinished(func(responses map[string]*Response) {
-				shouldquit <- 1
-			})
-
 			get(handler, "/")
-			<-shouldquit
+
 			It("should dispatch a request to production", func() {
 				Expect(productionResponse.Body.String()).To(Equal, "production")
 			})
