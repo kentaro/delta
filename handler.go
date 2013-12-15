@@ -1,6 +1,8 @@
 package delta
 
 import (
+	"bytes"
+	"io"
 	"log"
 	"net/http"
 	"time"
@@ -24,9 +26,20 @@ func (handler *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request)
 	responseCh := make(chan *Response, backendCount)
 	done := make(chan bool)
 
-	for i := range backendNames {
-		backend := handler.server.Backends[backendNames[i]]
-		go handler.dispatchProxyRequest(backend, req, masterResponseCh, responseCh)
+	bodies := make(map[string]io.Reader)
+	if req.Body != nil {
+		writers := make([]io.Writer, len(backendNames))
+		for i, name := range backendNames {
+			b := new(bytes.Buffer)
+			writers[i] = b
+			bodies[name] = b
+		}
+		io.Copy(io.MultiWriter(writers...), req.Body)
+	}
+
+	for _, name := range backendNames {
+		backend := handler.server.Backends[name]
+		go handler.dispatchProxyRequest(backend, req, bodies[name], masterResponseCh, responseCh)
 	}
 
 	// Wait for all responses asynchronously
@@ -58,6 +71,11 @@ func (handler *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request)
 	if response == nil {
 		http.Error(writer, "Internal Server Error", 500)
 	} else {
+		for key, values := range response.HttpResponse.Header {
+			for i := range values {
+				writer.Header().Add(key, values[i])
+			}
+		}
 		writer.WriteHeader(response.HttpResponse.StatusCode)
 
 		_, err := writer.Write(response.Data)
@@ -69,8 +87,8 @@ func (handler *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request)
 	<-done
 }
 
-func (handler *Handler) dispatchProxyRequest(backend *Backend, req *http.Request, masterResponseCh chan *Response, responseCh chan *Response) {
-	proxyRequest := handler.copyRequest(backend, req)
+func (handler *Handler) dispatchProxyRequest(backend *Backend, req *http.Request, body io.Reader, masterResponseCh chan *Response, responseCh chan *Response) {
+	proxyRequest := handler.copyRequest(backend, req, body)
 	client := new(http.Client)
 
 	now := time.Now()
@@ -95,8 +113,8 @@ func (handler *Handler) dispatchProxyRequest(backend *Backend, req *http.Request
 	}
 }
 
-func (handler *Handler) copyRequest(backend *Backend, req *http.Request) *http.Request {
-	proxyRequest, err := http.NewRequest(req.Method, backend.URL(req.URL.String()), nil)
+func (handler *Handler) copyRequest(backend *Backend, req *http.Request, body io.Reader) *http.Request {
+	proxyRequest, err := http.NewRequest(req.Method, backend.URL(req.URL.String()), body)
 
 	if err != nil {
 		log.Fatal(err)
@@ -104,7 +122,6 @@ func (handler *Handler) copyRequest(backend *Backend, req *http.Request) *http.R
 
 	proxyRequest.Proto = req.Proto
 	proxyRequest.Host = backend.HostPort()
-	proxyRequest.Body = req.Body
 
 	// Copy deeply because we may modify header later
 	for key, values := range req.Header {
