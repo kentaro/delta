@@ -1,4 +1,4 @@
-# Delta
+# Delta [![BuildStatus](https://travis-ci.org/serverspec/delta.png)](http://travis-ci.org/serverspec/delta)
 
 Delta is an HTTP shadow proxy server that sits between clients and your server(s) to enable "shadow requests".
 
