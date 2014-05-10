@@ -36,7 +36,7 @@ func TestRequestBody(t *testing.T) {
 			return []string{"production"}
 		}
 	})
-	server.OnMungeHeader(func(backend string, header *http.Header) {
+	server.OnMungeHeader(func(backend string, header *http.Header, req *http.Request) {
 		header.Add("Delta-Backend", backend)
 	})
 

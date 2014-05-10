@@ -15,7 +15,7 @@ type Server struct {
 	Backends map[string]*Backend
 
 	onSelectBackendHandler   func(req *http.Request) []string
-	onMungeHeaderHandler     func(backend string, header *http.Header)
+	onMungeHeaderHandler     func(backend string, header *http.Header, req *http.Request)
 	onBackendFinishedHandler func(map[string]*Response)
 }
 
@@ -62,7 +62,7 @@ func (server *Server) OnSelectBackend(handler func(req *http.Request) []string) 
 	server.onSelectBackendHandler = handler
 }
 
-func (server *Server) OnMungeHeader(handler func(backend string, header *http.Header)) {
+func (server *Server) OnMungeHeader(handler func(backend string, header *http.Header, req *http.Request)) {
 	server.onMungeHeaderHandler = handler
 }
 

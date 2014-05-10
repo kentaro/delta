@@ -1,9 +1,10 @@
 package main
 
 import (
-	"../"
+	".."
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -21,9 +22,10 @@ func main() {
 		}
 	})
 
-	server.OnMungeHeader(func(backend string, header *http.Header) {
+	server.OnMungeHeader(func(backend string, header *http.Header, req *http.Request) {
 		if backend == "testing" {
 			header.Add("X-Delta-Sandbox", "1")
+			header.Add("X-Forwarded-Host", strings.Split(req.Host, ":")[0])
 		}
 	})
 
