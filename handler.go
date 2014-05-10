@@ -131,7 +131,7 @@ func (handler *Handler) copyRequest(backend *Backend, req *http.Request, body io
 	}
 
 	if handler.server.onMungeHeaderHandler != nil {
-		handler.server.onMungeHeaderHandler(backend.Name, &proxyRequest.Header)
+		handler.server.onMungeHeaderHandler(backend.Name, &proxyRequest.Header, req)
 	}
 
 	return proxyRequest

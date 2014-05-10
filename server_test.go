@@ -62,7 +62,7 @@ func TestServer(t *testing.T) {
 		server := NewServer("0.0.0.0", 8484)
 
 		It("should set a handler into its onMungeHeaderHandler field", func() {
-			server.OnMungeHeader(func(backend string, header *http.Header) {})
+			server.OnMungeHeader(func(backend string, header *http.Header, req *http.Request) {})
 			Expect(server.onMungeHeaderHandler).To(Exist)
 		})
 	})

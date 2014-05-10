@@ -23,7 +23,7 @@ func setupServer() *Server {
 		}
 	})
 
-	server.OnMungeHeader(func(backend string, header *http.Header) {
+	server.OnMungeHeader(func(backend string, header *http.Header, req *http.Request) {
 		if backend == "testing" {
 			header.Add("X-Delta-Sandbox", "1")
 		}
