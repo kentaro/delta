@@ -11,6 +11,7 @@ type Response struct {
 	HttpResponse *http.Response
 	Data         []byte
 	Elapsed      time.Duration
+	Err          error
 }
 
 func NewResponse(backend *Backend, httpResponse *http.Response, elapsed time.Duration) (response *Response, err error) {
@@ -23,8 +24,16 @@ func NewResponse(backend *Backend, httpResponse *http.Response, elapsed time.Dur
 
 	var data []byte
 	data, err = ioutil.ReadAll(httpResponse.Body)
-	response.HttpResponse.Body.Close()
+	_ = response.HttpResponse.Body.Close()
 	response.Data = data
 
 	return response, err
+}
+
+func NewErrorResponse(backend *Backend, err error, elapsed time.Duration) *Response {
+	return &Response{
+		Backend: backend,
+		Err:     err,
+		Elapsed: elapsed,
+	}
 }

@@ -73,7 +73,7 @@ func (handler *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request)
 			handler.dismiss(body)
 
 			requestCount = requestCount + 1
-			if response != nil {
+			if response.Err != nil {
 				responses[backendName] = response
 			}
 
@@ -90,7 +90,7 @@ func (handler *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request)
 
 	// Wait for only master response in a blocking way
 	response := <-masterResponseCh
-	if response == nil {
+	if response == nil || response.Err != nil {
 		http.Error(writer, "Internal Server Error", 500)
 	} else {
 		for key, values := range response.HttpResponse.Header {
@@ -131,7 +131,7 @@ func (handler *Handler) dispatchProxyRequest(backend *Backend, req *http.Request
 
 	if err != nil {
 		log.Printf("HTTP Request Error: %s\n", err)
-		response = nil
+		response = NewErrorResponse(backend, err, elapsed)
 	} else {
 		response, err = NewResponse(backend, res, elapsed)
 		if err != nil {
